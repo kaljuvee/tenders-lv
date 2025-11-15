@@ -1,24 +1,38 @@
-"""Database models and connection for Latvia procurement tenders."""
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Numeric, Boolean
+"""Database models and connection management."""
+import os
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import os
 
-# Database connection
-DATABASE_URL = os.getenv('DB_URL', 'postgresql://indurent_db_user:mORTX4lmewn7ZJsMiU7Ox7Qb8gnxPRgf@dpg-d40gneur433s738clpeg-a.frankfurt-postgres.render.com/indurent_db')
+# Database configuration
+DATABASE_URL = os.getenv(
+    'DB_URL',
+    'postgresql://indurent_db_user:mORTX4lmewn7ZJsMiU7Ox7Qb8gnxPRgf@dpg-d40gneur433s738clpeg-a.frankfurt-postgres.render.com/indurent_db'
+)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Create engine with connection pooling
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10
+)
+
+# Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base class for models
 Base = declarative_base()
 
+
 class ProcurementNotice(Base):
-    """Procurement notice model matching tenders_lv schema."""
+    """Procurement notice model."""
     __tablename__ = 'procurement_notices'
     __table_args__ = {'schema': 'tenders_lv'}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    identifier = Column(String(255))
+    identifier = Column(String(255), unique=True, index=True)
     country_code = Column(String(2), default='LV')
     name = Column(Text)
     description = Column(Text)
@@ -41,27 +55,30 @@ class ProcurementNotice(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
 class DataSyncLog(Base):
-    """Data synchronization log."""
+    """Data synchronization log model."""
     __tablename__ = 'data_sync_log'
     __table_args__ = {'schema': 'tenders_lv'}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    status = Column(String(20))
+    status = Column(String(20))  # success, failed, in_progress
     records_processed = Column(Integer, default=0)
     records_added = Column(Integer, default=0)
     records_updated = Column(Integer, default=0)
     error_message = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+def init_db():
+    """Initialize database tables."""
+    Base.metadata.create_all(bind=engine)
+
+
 def get_db():
-    """Get database session."""
+    """Get database session (context manager)."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-def init_db():
-    """Initialize database tables."""
-    Base.metadata.create_all(bind=engine)
