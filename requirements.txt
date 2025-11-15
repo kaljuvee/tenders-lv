@@ -1,0 +1,5 @@
+python-fasthtml
+psycopg2-binary
+sqlalchemy
+requests
+python-dateutil
