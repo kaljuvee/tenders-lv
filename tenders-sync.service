@@ -1,0 +1,19 @@
+[Unit]
+Description=Latvia Procurement Monitor - Daily Sync Scheduler
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/tenders-lv
+Environment="PATH=/home/ubuntu/tenders-lv/venv/bin"
+ExecStart=/home/ubuntu/tenders-lv/venv/bin/python3 /home/ubuntu/tenders-lv/sync_scheduler.py scheduler
+Restart=always
+RestartSec=60
+
+# Logging
+StandardOutput=append:/home/ubuntu/tenders-lv/sync_service.log
+StandardError=append:/home/ubuntu/tenders-lv/sync_service.log
+
+[Install]
+WantedBy=multi-user.target
