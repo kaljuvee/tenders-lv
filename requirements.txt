@@ -4,3 +4,5 @@ sqlalchemy
 requests
 python-dateutil
 schedule
+plotly
+numpy
